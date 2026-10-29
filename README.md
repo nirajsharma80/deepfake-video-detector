@@ -1,26 +1,53 @@
-# Deepfake Video Detector
+# Deepfake Lens
 
-A portfolio-ready research prototype for frame-level deepfake screening. It includes a reproducible EfficientNet-B0 fine-tuning pipeline, face-aware video sampling, and a Streamlit review dashboard.
-
-> **Research prototype:** a model score is not proof that media is authentic or manipulated. This repository does not ship pretrained deepfake weights. Train on a licensed, representative dataset and evaluate across identities, codecs, and generation methods before interpreting results.
+Deepfake Lens is a local Streamlit app for Gemini-assisted screening of photos and videos. It reports qualitative cues and uncertainty; it is not a forensic detector and cannot prove that media is authentic or manipulated.
 
 ## Features
 
-- Fine-tune an ImageNet-initialized EfficientNet-B0 classifier on labeled real/fake frames.
-- Sample video frames and score the largest detected face when one is visible.
-- Review score trends and aggregate signals in a local web interface.
-- Keep large datasets and trained checkpoints outside version control.
+- Analyze JPG, JPEG, PNG, and WebP images.
+- Analyze MP4, MOV, AVI, WebM, WMV, MPEG, MPG, 3GP, and FLV videos.
+- Choose Gemini 3.5 Flash-Lite for faster replies or Gemini 3.8 Flash for a stronger review.
+- See the model's assessment, qualitative confidence, cited visual/audible cues, and limitations.
+- Require an explicit in-app consent checkbox before sending selected media to Google.
+- Request deletion of uploaded video files after analysis; the Gemini Files API also expires uploaded files after 48 hours.
+- Keep the earlier EfficientNet training code as an optional local research path.
 
-## Quick start
+## Run on Windows with VS Code
 
-```bash
-python -m venv .venv
-# Windows: .venv\Scripts\activate
-# macOS/Linux: source .venv/bin/activate
-pip install -r requirements.txt
+Use Python 3.11–3.15. In the VS Code terminal, from this folder, run:
+
+```powershell
+python -m venv .venv-vscode
+.\.venv-vscode\Scripts\python.exe -m pip install --upgrade pip
+.\.venv-vscode\Scripts\python.exe -m pip install -r requirements.txt
+Copy-Item .env.example .env
 ```
 
-Prepare a licensed image dataset with this layout (classes must be named `fake` and `real`):
+Open `.env` in VS Code and set your Gemini API key:
+
+```text
+GOOGLE_API_KEY=your_key_here
+```
+
+For a one-session run, you can instead enter the key in the app's masked sidebar field.
+
+Then launch the app:
+
+```powershell
+.\.venv-vscode\Scripts\python.exe -m streamlit run app.py
+```
+
+Open the local URL Streamlit prints, usually <http://localhost:8501>. `.env` is ignored by Git; never commit it or share its key. You can also set `GOOGLE_API_KEY` in the same terminal session before launching instead of using `.env`.
+
+## Media handling and limitations
+
+Photo bytes are sent inline in the Gemini request. Videos are uploaded through the Gemini Files API for processing, then Deepfake Lens requests deletion after analysis. The app shows a warning and requires consent before either request. Avoid confidential or sensitive media. Gemini API usage may be billable under your account.
+
+Gemini is a general multimodal model, not a purpose-trained deepfake classifier. It can miss subtle edits, be misled by compression or unusual lighting, and produce false positives. Its confidence wording is qualitative and uncalibrated. Use source provenance, forensic tooling, and human review for consequential decisions.
+
+## Optional local training pipeline
+
+The original EfficientNet-B0 training and local video inference code remains available separately. It requires its own compatible PyTorch environment and a licensed dataset arranged as:
 
 ```text
 data/
@@ -32,20 +59,7 @@ data/
     └── real/
 ```
 
-Train and launch:
-
-```bash
-python train.py --data data --epochs 5
-streamlit run app.py
-```
-
-## Method and limitations
-
-The training script fine-tunes a pretrained EfficientNet-B0 using frame crops. Inference samples every Nth frame, optionally crops the largest Haar-detected face, and reports the mean fake-class probability plus per-sample scores. A temporal average can hide short edits; face detectors can miss profiles or unusual lighting. Test on subject-disjoint and source-disjoint splits, report precision/recall and calibration, and review false positives before any real-world use.
-
-## Data and model provenance
-
-Use only data you have permission to process. Record the source, license, split method, preprocessing, training command, metrics, and checkpoint hash when training a model. Do not commit datasets, videos, or trained weights.
+Install `requirements-training.txt`, then run `python train.py --data data --epochs 5`. The Streamlit app does not require this dataset or a checkpoint.
 
 ## License
 
