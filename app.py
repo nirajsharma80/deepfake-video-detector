@@ -3,7 +3,6 @@ import tempfile
 from pathlib import Path
 
 import streamlit as st
-from dotenv import load_dotenv
 from google.genai import errors
 
 from gemini_detector import analyze_image, analyze_video
@@ -23,7 +22,13 @@ VIDEO_MIME_TYPES = {
     ".flv": "video/x-flv",
 }
 
-load_dotenv(ROOT / ".env", override=False)
+try:
+    from dotenv import load_dotenv
+except ModuleNotFoundError:
+    load_dotenv = None
+
+if load_dotenv:
+    load_dotenv(ROOT / ".env", override=False)
 API_KEY = os.getenv("GOOGLE_API_KEY", "").strip()
 
 st.set_page_config(page_title="Deepfake Lens", page_icon="◉", layout="wide")
